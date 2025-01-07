@@ -10,7 +10,7 @@ function App() {
 
   useEffect(() => {
     // Listen for keydown events
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       const key = event.key;
 
       // Handle number keys
@@ -46,7 +46,7 @@ function App() {
     setEvaluated(false);
   };
 
-  const handleInput = (value) => {
+  const handleInput = (value: string) => {
     if (evaluated) {
       setInput(value);
       setFormula(value);
@@ -67,7 +67,7 @@ function App() {
     setFormula(formula + value);
   };
 
-  const handleOperator = (operator) => {
+  const handleOperator = (operator: string) => {
     if (evaluated) {
       setFormula(input + operator);
       setEvaluated(false);
