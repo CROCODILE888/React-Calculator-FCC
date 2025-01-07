@@ -1,119 +1,138 @@
-import { useState } from 'react';
-import './App.css'
-import { Numbers, Operators } from './types';
-import { NumberButton, OperatorButton } from './Buttons';
+import { useEffect, useState } from 'react';
+import './App.css';
 
-const App = () => {
+function App() {
+  const [input, setInput] = useState('0');
+  const [formula, setFormula] = useState('');
+  const [evaluated, setEvaluated] = useState(false);
 
-  // Numbers with corresponding IDs
-  const nums: Numbers[] = [
-    { num: '0', id: 'zero' },
-    { num: '1', id: 'one' },
-    { num: '2', id: 'two' },
-    { num: '3', id: 'three' },
-    { num: '4', id: 'four' },
-    { num: '5', id: 'five' },
-    { num: '6', id: 'six' },
-    { num: '7', id: 'seven' },
-    { num: '8', id: 'eight' },
-    { num: '9', id: 'nine' }
-  ];
+  const operators = ['+', '-', '*', '/'];
 
-  // Operators with corresponding IDs
-  const operators: Operators[] = [
-    { operator: "+", id: "add" },
-    { operator: "-", id: "subtract" },
-    { operator: "*", id: "multiply" },
-    { operator: "/", id: "divide" }
-  ];
+  useEffect(() => {
+    // Listen for keydown events
+    const handleKeyDown = (event) => {
+      const key = event.key;
 
-  const [total, setTotal] = useState('');
-  const [display, setDisplay] = useState('0');
-  const [isNewNumber, setIsNewNumber] = useState(false);
-  const [currentOperator, setCurrentOperator] = useState('')
+      // Handle number keys
+      if (/[\d.]/.test(key)) {
+        handleInput(key);
+      }
+      // Handle operator keys
+      else if (['/', '*', '-', '+'].includes(key)) {
+        handleOperator(key);
+      }
+      // Handle Enter key for equals
+      else if (key === 'Enter') {
+        handleEquals();
+      }
+      // Handle Backspace key for clearing
+      else if (key === 'Backspace') {
+        handleClear();
+      }
+    };
 
-  const handleNumbers = (value: string) => {
-    if (display == '0' || isNewNumber) {
-      setDisplay(value);
-      setIsNewNumber(false)
+    // Add event listener for keydown
+    window.addEventListener('keydown', handleKeyDown);
+
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [formula, input, evaluated]);
+
+  const handleClear = () => {
+    setInput('0');
+    setFormula('');
+    setEvaluated(false);
+  };
+
+  const handleInput = (value) => {
+    if (evaluated) {
+      setInput(value);
+      setFormula(value);
+      setEvaluated(false);
+      return;
     }
-    else {
-      setDisplay((prev) => prev + value)
-    }
-  }
 
-  const handleOperators = (operator: string) => {
-    if (currentOperator && !isNewNumber) {
-      const newTotal = eval(`${total}${currentOperator}${display}`);
-      setTotal(newTotal.toString());
-      setDisplay(newTotal.toString())
+    if (value === '0' && input === '0') return;
+
+    if (value === '.' && input.includes('.')) return;
+
+    if (input === '0' && value !== '.') {
+      setInput(value);
     } else {
-      setTotal(display);
+      setInput(input + value);
     }
-    setIsNewNumber(true);
-    setCurrentOperator(operator);
-    setDisplay(operator);
-  }
+
+    setFormula(formula + value);
+  };
+
+  const handleOperator = (operator) => {
+    if (evaluated) {
+      setFormula(input + operator);
+      setEvaluated(false);
+    } else {
+      const lastChar = formula.slice(-1);
+      const secondLastChar = formula.slice(-2, -1);
+
+      if (operators.includes(lastChar)) {
+        if (operator === '-' && !operators.includes(secondLastChar)) {
+          // Allow negative numbers like 5 * -5
+          setFormula(formula + operator);
+        } else {
+          // Replace consecutive operators, keeping the latest one
+          // eslint-disable-next-line no-useless-escape
+          const updatedFormula = formula.replace(/[*+/\-]+$/, '') + operator;
+          setFormula(updatedFormula);
+        }
+      } else {
+        setFormula(formula + operator);
+      }
+    }
+
+    setInput(operator);
+  };
 
   const handleEquals = () => {
-    if (currentOperator && total) {
-      const result = eval(`${total}${currentOperator}${display}`);
-      setDisplay(result.toString());  // Ensure the result is displayed as a string
-      setTotal('');  // Clear total after calculation
-      setCurrentOperator('');  // Clear the operator
+    try {
+      const result = eval(formula);
+      setInput(result.toString());
+      setFormula(result.toString());
+      setEvaluated(true);
+    } catch {
+      setInput('Error');
+      setFormula('');
     }
   };
 
-  const handleDecimal = () => {
-    if (isNewNumber) {
-        setDisplay('0.');
-        setIsNewNumber(false);
-    } else if (!display.includes('.')) {
-        setDisplay((prev) => prev + '.');  // Append the decimal point
-    }
-};
-
-  const handleClear = () => {
-    setTotal('');
-    setDisplay('0');
-    setCurrentOperator('');
-    setIsNewNumber(false)
-  }
-
   return (
-    <div className='calcultor'>
+    <div className="calculator">
+      <div id="display" className="display">{input}</div>
+      <div className="buttons">
+        <button id="clear" onClick={handleClear}>C</button>
+        <button id="divide" onClick={() => handleOperator('/')}>/</button>
+        <button id="multiply" onClick={() => handleOperator('*')}>*</button>
 
-      <div id='display'>
-        {display}
+        <button id="seven" onClick={() => handleInput('7')}>7</button>
+        <button id="eight" onClick={() => handleInput('8')}>8</button>
+        <button id="nine" onClick={() => handleInput('9')}>9</button>
+        <button id="subtract" onClick={() => handleOperator('-')}>-</button>
+
+
+        <button id="four" onClick={() => handleInput('4')}>4</button>
+        <button id="five" onClick={() => handleInput('5')}>5</button>
+        <button id="six" onClick={() => handleInput('6')}>6</button>
+        <button id="add" onClick={() => handleOperator('+')}>+</button>
+        <button id="one" onClick={() => handleInput('1')}>1</button>
+        <button id="two" onClick={() => handleInput('2')}>2</button>
+        <button id="three" onClick={() => handleInput('3')}>3</button>
+        <button id="decimal" onClick={() => handleInput('.')}>.</button>
+        <button id="equals" onClick={handleEquals}>=</button>
+        <button id="zero" onClick={() => handleInput('0')}>0</button>
+
       </div>
-
-      {/* Render number buttons */}
-      {nums.map((item, index) => (
-        <NumberButton key={index} id={item.id} num={item.num} handleNumbers={handleNumbers} />
-      ))}
-
-      {/* Render operator buttons */}
-      {operators.map((item, index) => (
-        <OperatorButton key={index} id={item.id} operator={item.operator} handleOperators={handleOperators} />
-      ))}
-
-      {/* Equal button */}
-      <button
-        id="equals"
-        onClick={handleEquals}>=</button>
-
-      {/* Decimal button */}
-      <button
-        id="decimal"
-        onClick={handleDecimal}>.</button>
-
-      {/* Clear button */}
-      <button
-        id="clear"
-        onClick={handleClear}>C</button>
-
     </div>
-  )
+  );
 }
 
-export default App
+export default App;
